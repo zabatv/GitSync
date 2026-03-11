@@ -5,15 +5,20 @@ services:
     image: mariadb:10.11
     container_name: seafile-mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=ПРИДУМАЙТЕ_ПАРОЛЬ  # Замените
+      - MYSQL_ROOT_PASSWORD=secret
       - MYSQL_ROOT_HOST=%
       - MYSQL_DATABASE=seafile
       - MYSQL_USER=seafile
-      - MYSQL_PASSWORD=ПРИДУМАЙТЕ_ПАРОЛЬ  # Замените
+      - MYSQL_PASSWORD=secret
     volumes:
       - ./mysql:/var/lib/mysql
     networks:
       - seafile-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      timeout: 10s
+      retries: 3
 
   memcached:
     image: memcached:1.6
@@ -32,15 +37,18 @@ services:
       - ./seafile-data:/shared
     environment:
       - DB_HOST=db
-      - DB_ROOT_PASSWD=ПРИДУМАЙТЕ_ПАРОЛЬ  # Замените
+      - DB_ROOT_PASSWD=secret
+      - MYSQL_ROOT_PASSWD=secret
       - TIME_ZONE=Europe/Moscow
       - SEAFILE_ADMIN_EMAIL=admin@yourcompany.com
-      - SEAFILE_ADMIN_PASSWORD=ПРИДУМАЙТЕ_ПАРОЛЬ  # Замените
+      - SEAFILE_ADMIN_PASSWORD=admin123
       - SEAFILE_SERVER_LETSENCRYPT=false
-      - SEAFILE_SERVER_HOSTNAME=seafile.yourcompany.com
+      - SEAFILE_SERVER_HOSTNAME=192.168.0.104
     depends_on:
-      - db
-      - memcached
+      db:
+        condition: service_healthy
+      memcached:
+        condition: service_started
     networks:
       - seafile-net
 
